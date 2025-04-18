@@ -35,6 +35,12 @@ schemes:
     name: SCReAM
     color: pink
     marker: '1'
+  reno:
+    name: reno
+    src: "src/wrappers/reno.py"
+    setup_time: 0
+    color: gold
+    marker: '^'
   webrtc:
     name: WebRTC media
     color: brown

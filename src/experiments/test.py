@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2
 
 import os
 from os import path
@@ -45,6 +45,7 @@ class Test(object):
 
         self.test_start_time = None
         self.test_end_time = None
+	self.remote_side = False
 
         # local mode
         if self.mode == 'local':
@@ -283,15 +284,15 @@ class Test(object):
         ts_manager.stdin.flush()
 
         # run tunnel client manager
-        if self.mode == 'remote':
+        if self.remote_side:
             if self.server_side == 'local':
-                tc_manager_cmd = self.r['ssh_cmd'] + [
-                    'python', self.r['tunnel_manager']]
-            else:
-                tc_manager_cmd = ['python', self.tunnel_manager]
-        else:
-            tc_manager_cmd = self.mm_cmd + ['python', self.tunnel_manager]
+            	tc_manager_cmd = self.mm_cmd + ['--', 'python2', self.tunnel_manager]
 
+            else:
+                tc_manager_cmd = ['python2', self.tunnel_manager]
+        else:
+            tc_manager_cmd = self.mm_cmd + ['--', 'python2', self.tunnel_manager]     
+        print("TC MANAGER CMD:", tc_manager_cmd)
         sys.stderr.write('[tunnel client manager (tcm)] ')
         self.tc_manager = Popen(tc_manager_cmd, stdin=PIPE, stdout=PIPE,
                                 preexec_fn=os.setsid)
