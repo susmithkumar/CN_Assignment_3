@@ -1,167 +1,163 @@
 # Pantheon of Congestion Control
-The Pantheon contains wrappers for many popular practical and research
-congestion control schemes. The Pantheon enables them to run on a common
-interface, and has tools to benchmark and compare their performances.
-Pantheon tests can be run locally over emulated links using
-[mahimahi](http://mahimahi.mit.edu/) or over the Internet to a remote machine.
 
-Our website is <https://pantheon.stanford.edu>, where you can find more
-information about Pantheon, including supported schemes, measurement results
-on a global testbed so far, and our paper at [USENIX ATC 2018](https://www.usenix.org/conference/atc18/presentation/yan-francis)
-(**Awarded Best Paper**).
-In case you are interested, the scripts and traces
-(including "calibrated emulators") for running the testbed can be found in
-[observatory](https://github.com/StanfordSNR/observatory).
+The Pantheon enables benchmarking and comparison of many congestion control algorithms using a common interface. It supports testing schemes locally using Mahimahi or remotely over the Internet.
 
-To discuss and talk about Pantheon-related topics and issues, feel free to
-post in the [Google Group](https://groups.google.com/forum/#!forum/pantheon-stanford)
-or send an email to `pantheon-stanford <at> googlegroups <dot> com`.
+**Project Repository**: https://pantheon.stanford.edu  
+**USENIX Paper**: https://www.usenix.org/conference/atc18/presentation/yan-francis  
+**Google Group**: https://groups.google.com/forum/#!forum/pantheon-stanford
 
-## Disclaimer
-This is research software. Our scripts will write to the file system in the
-`pantheon` folder. We never run third party programs as root, but we cannot
-guarantee they will never try to escalate privilege to root.
+---
 
-You might want to install dependencies and run the setup on your own, because
-our handy scripts will install packages and perform some system-wide settings
-(e.g., enabling IP forwarding, loading kernel modeuls) as root.
-Please run at your own risk.
-
-## Preparation
-To clone this repository, run:
-
-```
+## My Setup and Execution Journey
+'''
+used ubuntu-20.04.6-desktop-amd24 on VMware Workstation 17 player(used 4 cores and 6gb ram ,35gb space which will allow less crash and run faster)
+'''
+### Repository Cloning and Initialization
+```bash
 git clone https://github.com/StanfordSNR/pantheon.git
+cd pantheon
+git submodule update --init --recursive
 ```
 
-Many of the tools and programs run by the Pantheon are git submodules in the
-`third_party` folder. To add submodules after cloning, run:
-
-```
-git submodule update --init --recursive  # or tools/fetch_submodules.sh
-```
-
-## Dependencies
-We provide a handy script `tools/install_deps.sh` to install globally required
-dependencies; these dependencies are required before testing **any** scheme
-and are different from the flag `--install-deps` below.
-In particular, we created the [Pantheon-tunnel](https://github.com/StanfordSNR/pantheon-tunnel)
-that is required to instrument each scheme.
-
-You might want to inspect the contents of
-`install_deps.sh` and install these dependencies by yourself in case you want to
-manage dependencies differently. Please note that Pantheon currently
-**only** supports Python 2.7.
-
-Next, for those dependencies required by each congestion control scheme `<cc>`,
-run `src/wrappers/<cc>.py deps` to print a dependency list. You could install
-them by yourself, or run
-
-```
-src/experiments/setup.py --install-deps (--all | --schemes "<cc1> <cc2> ...")
+### Dependencies
+- Mahimahi setup:
+```bash
+git clone https://github.com/ravinet/mahimahi.git
+cd mahimahi
+./autogen.sh
+./configure
+make
+sudo make install
 ```
 
-to install dependencies required by all schemes or a list of schemes separated
-by spaces.
-
-## Setup
-After installing dependencies, run
-
-```
-src/experiments/setup.py [--setup] [--all | --schemes "<cc1> <cc2> ..."]
+- System-wide dependencies:
+```bash
+sudo apt update
+sudo apt install libboost-dev libprotobuf-dev protobuf-c-compiler protobuf-compiler \
+    libjemalloc-dev libboost-python-dev libpython2.7-dev iperf python2.7
 ```
 
-to set up supported congestion control schemes. `--setup` is required
-to be run only once. In contrast, `src/experiments/setup.py` is
-required to be run on every reboot (without `--setup`).
-
-## Running the Pantheon
-To test schemes in emulated networks locally, run
-
+- Pantheon dependencies:
+```bash
+src/experiments/setup.py --install-deps --all
 ```
-src/experiments/test.py local (--all | --schemes "<cc1> <cc2> ...")
+Initial Setup
+
+```bash
+PYTHONPATH=src /usr/local/python2/bin/python src/experiments/setup.py --setup --all
 ```
+Run on Every Reboot
+```bash
+PYTHONPATH=src /usr/local/python2/bin/python src/experiments/setup.py --all
+---
 
-To test schemes over the Internet to remote machine, run
-
-```
-src/experiments/test.py remote (--all | --schemes "<cc1> <cc2> ...") HOST:PANTHEON-DIR
-```
-
-Run `src/experiments/test.py local -h` and `src/experiments/test.py remote -h`
-for detailed usage and additional optional arguments, such as multiple flows,
-running time, arbitrary set of mahimahi shells for emulation tests,
-data sender side for real tests; use `--data-dir DIR` to specify an
-an output directory to save logs.
-
-## Pantheon analysis
-To analyze test results, run
-
-```
-src/analysis/analyze.py --data-dir DIR
+## ⚙️ Python 2.7 Manual Setup (if required)
+```bash
+wget https://www.python.org/ftp/python/2.7.18/Python-2.7.18.tgz
+tar -xzf Python-2.7.18.tgz
+cd Python-2.7.18
+./configure --prefix=/usr/local/python2
+make -j4
+sudo make install
 ```
 
-It will analyze the logs saved by `src/experiments/test.py`, then generate
-performance figures and a full PDF report `pantheon_report.pdf`.
-
-## Running a single congestion control scheme
-All the available schemes can be found in `src/config.yml`. To run a single
-congestion control scheme, first follow the **Dependencies** section to install
-the required dependencies.
-
-At the first time of running, run `src/wrappers/<cc>.py setup`
-to perform the persistent setup across reboots, such as compilation,
-generating or downloading files to send, etc. Then run
-`src/wrappers/<cc>.py setup_after_reboot`, which also has to be run on every
-reboot. In fact, `test/setup.py` performs `setup_after_reboot` by
-default, and runs `setup` on schemes when `--setup` is given.
-
-Next, execute the following command to find the running order for a scheme:
-```
-src/wrappers/<cc>.py run_first
+### pip and modules
+```bash
+wget https://bootstrap.pypa.io/pip/2.7/get-pip.py
+/usr/local/python2/bin/python2.7 get-pip.py
+/usr/local/python2/bin/pip install pyyaml==3.13
 ```
 
-Depending on the output of `run_first`, run
-
-```
-# Receiver first
-src/wrappers/<cc>.py receiver port
-src/wrappers/<cc>.py sender IP port
+### Shared Library Fixes
+```bash
+sudo ln -s /usr/local/python2/lib/libpython2.7.so.1.0 /usr/lib/libpython2.7.so.1.0
+export LD_LIBRARY_PATH=/usr/local/python2/lib:$LD_LIBRARY_PATH
 ```
 
-or
+---
 
+## 🏗️ Building Mahimahi from Source
+- C++20 flag was replaced with `-std=c++17`
+- Fixed string truncation warning in `netdevice.cc`
+
+```bash
+cd ~/Desktop/networks/mahimahi
+./autogen.sh
+./configure
+make -j4
+sudo make install
 ```
-# Sender first
-src/wrappers/<cc>.py sender port
-src/wrappers/<cc>.py receiver IP port
+
+---
+
+## 🛠️ Building and Setting Up Pantheon
+```bash
+cd ~/Desktop/networks/pantheon
+PYTHONPATH=src /usr/local/python2/bin/python src/experiments/setup.py --setup --all
 ```
 
-Run `src/wrappers/<cc>.py -h` for detailed usage.
+If needed:
+```bash
+sudo apt install libpython2.7-dev libboost-python1.71-dev libjemalloc-dev
+```
 
-## How to add your own congestion control
-Adding your own congestion control to Pantheon is easy! Just follow these
-steps:
+---
 
-1. Fork this repository.
+## 🧪 Running Tests
+```bash
+src/experiments/test.py local --schemes "bbr cubic copa"
+```
 
-2. Add your congestion control repository as a submodule to `pantheon`:
+If `IndexError` occurs:
+- Ensure all wrapper scripts define `arg_parser.receiver_first()`
+- Ensure `run_first` is implemented correctly
 
-   ```
-   git submodule add <your-cc-repo-url> third_party/<your-cc-repo-name>
-   ```
+To test manually:
+```bash
+src/wrappers/<scheme>.py setup
+src/wrappers/<scheme>.py setup_after_reboot
+src/wrappers/<scheme>.py run_first
+# Then based on order:
+src/wrappers/<scheme>.py receiver <port>
+src/wrappers/<scheme>.py sender <IP> <port>
+```
 
-   and add `ignore = dirty` to `.gitmodules` under your submodule.
+Mahimahi shell example:
+```bash
+iperf -s  # Receiver
+mm-delay 5 mm-link 50mbps.trace 50mbps.trace -- iperf -c 100.64.0.1 -t 60 -i 1
+```
 
-3. In `src/wrappers`, read `example.py` and create your own `<your-cc-name>.py`.
-   Make sure the sender and receiver run longer than 60 seconds; you could also
-   leave them running forever without the need to kill them.
+---
 
-4. Add your scheme to `src/config.yml` along with settings of
-   `name`, `color` and `marker`, so that `src/experiments/test.py` is able to
-   find your scheme and `src/analysis/analyze.py` is able to plot your scheme
-   with the specified settings.
+## 📊 Analysis
+```bash
+src/analysis/analyze.py --data-dir src/experiments/data
+```
+Generates:
+- Throughput & RTT graphs
+- Packet loss
+- Full PDF report `pantheon_report.pdf`
 
-5. Add your scheme to `SCHEMES` in `.travis.yml` for continuous integration testing.
+View or convert:
+```bash
+evince pantheon_report.pdf &
+convert -density 150 pantheon_report.pdf output.png
+```
 
-6. Send us a pull request and that's it, you're in the Pantheon!
+---
+
+## 🔧 Common Issues & Fixes
+- Built Mahimahi with C++17 manually
+- Installed Python 2.7 with pip, SSL, zlib support
+- Symlinked missing `.so` libraries
+- Fixed wrapper script bugs in `bbr.py`, `cubic.py`
+- Solved `IndexError` by correcting malformed `cmd_to_run_tc` entries
+
+---
+
+## 🎯 Summary
+Pantheon is now fully operational with custom setup on Ubuntu VM. Performance of BBR, CUBIC, and COPA is measurable, analysis is automated, and custom schemes can be added easily.
+
+---
+
